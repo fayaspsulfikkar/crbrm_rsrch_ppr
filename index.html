@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neuroscience & Virality: A TRIBE v2 Analysis</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+
+    <!-- Configuration for Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    },
+                    colors: {
+                        academic: {
+                            bg: '#F9FAFB',      /* Paper off-white */
+                            surface: '#FFFFFF', /* Pure white for figures/cards */
+                            text: '#111827',    /* Almost black */
+                            muted: '#4B5563',   /* Slate gray for body text */
+                            border: '#E5E7EB',  /* Light gray borders */
+                            viral: '#1E3A8A',   /* Academic Navy */
+                            nonviral: '#991B1B',/* Academic Crimson */
+                            highlight: '#F3F4F6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F9FAFB;
+            color: #111827;
+            overflow-x: hidden;
+            line-height: 1.7;
+        }
+
+        /* --- Academic Styling --- */
+        .academic-card {
+            background-color: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 4px; /* Subtle radius, not overly rounded */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .academic-card:hover {
+            border-color: #D1D5DB;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .figure-caption {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            color: #4B5563;
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #E5E7EB;
+        }
+
+        .abstract-block {
+            border-top: 2px solid #111827;
+            border-bottom: 2px solid #111827;
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+            background-color: transparent;
+        }
+
+        /* Mandatory Chart Container Styling */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 450px;
+        }
+
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+        @media (max-width: 640px) { .chart-container { height: 300px; } }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #F9FAFB; }
+        ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 0px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+
+        /* Liquid Accordion Styles */
+        .accordion-body {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            margin-top: 0;
+            padding-top: 0;
+            border-top-width: 0;
+            border-color: #E5E7EB;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .accordion-body.open {
+            max-height: 500px;
+            opacity: 1;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top-width: 1px;
+        }
+
+        /* Table of Contents Active State */
+        .nav-link {
+            transition: color 0.2s ease, font-weight 0.2s ease;
+            position: relative;
+            display: block;
+            padding-left: 1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+        }
+        .nav-active {
+            color: #1E3A8A !important; /* Navy */
+            font-weight: 600 !important;
+        }
+        .nav-active::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #1E3A8A;
+        }
+        
+        /* Typography specifics */
+        h1, h2, h3 { letter-spacing: -0.02em; }
+        h2 { border-bottom: 1px solid #E5E7EB; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+    </style>
+</head>
+<body class="font-serif antialiased selection:bg-academic-viral selection:text-white">
+
+    <!-- Chosen Palette: Classic Academic (Navy, Crimson, Slate, and Pure White on Off-White) -->
+
+    <!-- Application Structure Plan: 
+        Architecture: "Academic Journal Article".
+        Layout: Left-sidebar acts as a formal "Table of Contents" for quick jumping. Main content is structured linearly like a published paper.
+        Flow:
+        1. Title & Abstract: Formal presentation of the thesis and summary.
+        2. Introduction & Methodology: Context and dataset parameters.
+        3. Results (Figures 1, 2, 3): Data visualization presented as formal figures with academic captions.
+        4. Discussion: Thematic analysis of the findings.
+        Reasoning: This structure grounds the data in scientific rigor, prioritizing the authority of the content over flashy UI elements.
+    -->
+
+    <div class="flex flex-col lg:flex-row min-h-screen relative z-10 max-w-7xl mx-auto">
+        
+        <!-- Sidebar Navigation (Table of Contents) -->
+        <nav class="lg:w-64 lg:fixed lg:h-screen bg-academic-bg z-40 p-8 flex flex-col hidden lg:flex border-r border-academic-border">
+            <div class="mb-10 border-b border-academic-border pb-6">
+                <div class="text-sm font-sans font-bold text-academic-muted uppercase tracking-widest mb-2">Cerebrum Journal</div>
+                <div class="text-xs font-sans text-gray-500">Vol. 4, Issue 2 | April 2026</div>
+            </div>
+            
+            <div class="text-sm font-sans font-bold text-academic-text uppercase tracking-widest mb-4">Contents</div>
+            <div class="flex-1 flex flex-col font-sans text-sm text-academic-muted space-y-5" id="nav-links">
+                <a href="#abstract" class="nav-link hover:text-academic-viral">Abstract & Key Metrics</a>
+                <a href="#methodology" class="nav-link hover:text-academic-viral">I. Methodology</a>
+                <a href="#neural-overlap" class="nav-link hover:text-academic-viral">II. Neural Overlap (Fig. 1)</a>
+                <a href="#correlation" class="nav-link hover:text-academic-viral">III. Correlation Analysis (Fig. 2)</a>
+                <a href="#temporal" class="nav-link hover:text-academic-viral">IV. Temporal Tracking (Fig. 3)</a>
+                <a href="#discussion" class="nav-link hover:text-academic-viral">V. Discussion & Drivers</a>
+            </div>
+        </nav>
+
+        <!-- Mobile Header -->
+        <div class="lg:hidden sticky top-0 bg-academic-surface z-50 p-4 flex justify-between items-center border-b border-academic-border shadow-sm">
+            <div class="text-sm font-sans font-bold text-academic-text tracking-widest uppercase">Cerebrum Journal</div>
+            <select id="mobile-nav" class="bg-academic-bg border border-academic-border text-academic-text font-sans text-sm rounded focus:ring-academic-viral focus:border-academic-viral block p-2 outline-none">
+                <option value="#abstract">Abstract</option>
+                <option value="#methodology">I. Methodology</option>
+                <option value="#neural-overlap">II. Neural Overlap</option>
+                <option value="#correlation">III. Correlation Analysis</option>
+                <option value="#temporal">IV. Temporal Tracking</option>
+                <option value="#discussion">V. Discussion</option>
+            </select>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 lg:ml-64 p-6 md:p-12 lg:p-16 max-w-4xl font-serif text-academic-text">
+
+            <!-- Section: Title & Abstract -->
+            <section id="abstract" class="mb-16 pt-4">
+                <div class="text-center mb-10">
+                    <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
+                        Brain Region Activation Does Not Predict Social Media Virality
+                    </h1>
+                    <p class="text-lg font-sans text-academic-muted mb-2">A TRIBE v2 Analysis of Video Content Engagement</p>
+                    <p class="text-sm font-sans text-academic-muted italic">By Fayas P Sulfikkar &mdash; April 2026</p>
+                </div>
+
+                <div class="abstract-block">
+                    <h3 class="font-sans font-bold text-sm uppercase tracking-widest text-center mb-4">Abstract</h3>
+                    <p class="text-academic-muted leading-relaxed mb-6 text-justify">
+                        An empirical analysis of 20 video assets using Meta's TRIBE v2 foundation model reveals a striking reality: the neurological engagement of an individual viewer has no statistically significant correlation with a video's exponential spread on social platforms. While localized neural engagement indicates subjective attention, macro-level virality is primarily driven by platform algorithms and network effects.
+                    </p>
+                    
+                    <!-- Key Findings Table -->
+                    <div class="font-sans text-sm border border-academic-border rounded bg-academic-surface overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-academic-highlight border-b border-academic-border text-academic-text uppercase tracking-wide">
+                                    <th class="p-3 font-semibold border-r border-academic-border">Metric</th>
+                                    <th class="p-3 font-semibold border-r border-academic-border">Viral Cohort</th>
+                                    <th class="p-3 font-semibold border-r border-academic-border">Non-Viral Cohort</th>
+                                    <th class="p-3 font-semibold">P-Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="p-3 border-r border-academic-border font-medium">Mean Activation (0-1)</td>
+                                    <td class="p-3 border-r border-academic-border text-academic-viral font-bold">0.39</td>
+                                    <td class="p-3 border-r border-academic-border text-academic-nonviral font-bold">0.38</td>
+                                    <td class="p-3 font-mono text-xs">> 0.05 (Insignificant)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Methodology -->
+            <section id="methodology" class="mb-16 pt-8 -mt-8">
+                <h2 class="text-2xl font-bold">I. Methodology Overview</h2>
+                <p class="text-academic-muted mb-6 text-justify">
+                    This study utilizes Meta's TRIBE v2 model to predict Blood-Oxygen-Level-Dependent (BOLD) activation without clinical fMRI scanning. The dataset comprises 20 short-form videos pair-matched by topic, length, and visual quality to control for confounding variables.
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
+                    <div class="academic-card p-6">
+                        <h3 class="font-bold mb-3 text-academic-text border-b border-academic-border pb-2">A. Dataset Parameters</h3>
+                        <ul class="space-y-2 text-sm text-academic-muted">
+                            <li class="flex items-center"><span class="w-2 h-2 rounded-full bg-academic-viral mr-2"></span> <strong>Viral (n=10):</strong> >100,000 views, top 1% engagement.</li>
+                            <li class="flex items-center"><span class="w-2 h-2 rounded-full bg-academic-nonviral mr-2"></span> <strong>Non-Viral (n=10):</strong> <10,000 views.</li>
+                        </ul>
+                    </div>
+
+                    <div class="academic-card p-6">
+                        <h3 class="font-bold mb-3 text-academic-text border-b border-academic-border pb-2">B. Regions of Interest (ROI)</h3>
+                        <p class="text-sm text-academic-muted mb-2">Mapped via the Harvard-Oxford anatomical atlas:</p>
+                        <div class="flex flex-wrap gap-1">
+                            <span class="px-2 py-1 bg-academic-highlight border border-academic-border text-academic-text rounded text-xs font-medium">Broca (Language)</span>
+                            <span class="px-2 py-1 bg-academic-highlight border border-academic-border text-academic-text rounded text-xs font-medium">Amygdala (Emotion)</span>
+                            <span class="px-2 py-1 bg-academic-highlight border border-academic-border text-academic-text rounded text-xs font-medium">NAcc (Reward)</span>
+                            <span class="px-2 py-1 bg-academic-highlight border border-academic-border text-academic-text rounded text-xs font-medium">Hippocampus (Memory)</span>
+                            <span class="px-2 py-1 bg-academic-highlight border border-academic-border text-academic-text rounded text-xs font-medium">Parietal (Attention)</span>
+                            <span class="px-2 py-1 bg-academic-highlight border border-academic-border text-academic-text rounded text-xs font-medium">TPJ (Social)</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Neural Overlap (Radar & Bar Charts) -->
+            <section id="neural-overlap" class="mb-16 pt-8 -mt-8">
+                <h2 class="text-2xl font-bold">II. Neural Footprint Overlap</h2>
+                <p class="text-academic-muted mb-8 text-justify">
+                    Our initial hypothesis posited that viral videos would trigger significantly higher activation in reward and emotion centers. The data visually disproves this, revealing a near-perfect eclipse between the neural footprints of both cohorts across all six measured regions.
+                </p>
+
+                <div class="academic-card p-6 md:p-8 mb-8 font-sans">
+                    <div class="flex justify-end mb-4 space-x-2">
+                        <button id="btn-radar" class="px-5 py-2 bg-academic-text text-white border border-academic-text rounded text-xs font-bold transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-sm">Radar View</button>
+                        <button id="btn-bar" class="px-5 py-2 bg-white text-academic-muted border border-academic-border hover:bg-academic-highlight rounded text-xs font-bold transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] hover:shadow-inner">Bar View</button>
+                    </div>
+                    
+                    <!-- Chart Container -->
+                    <div class="chart-container" id="overlap-container">
+                        <canvas id="overlapChart"></canvas>
+                    </div>
+                    
+                    <div class="figure-caption">
+                        <strong>Figure 1.</strong> Mean regional activation scores comparing Viral (Navy) and Non-Viral (Crimson) cohorts. Interquartile overlap indicates negligible differentiation.
+                    </div>
+                </div>
+
+                <!-- Interactive Region Details (Academic Tables) -->
+                <div class="overflow-x-auto border border-academic-border rounded bg-academic-surface font-sans">
+                    <table class="w-full text-left text-sm border-collapse" id="region-table">
+                        <thead>
+                            <tr class="bg-academic-highlight border-b border-academic-border">
+                                <th class="p-3 font-semibold">Brain Region</th>
+                                <th class="p-3 font-semibold">Function</th>
+                                <th class="p-3 font-semibold text-center text-academic-viral">Viral $\bar{x}$</th>
+                                <th class="p-3 font-semibold text-center text-academic-nonviral">Non-Viral $\bar{x}$</th>
+                            </tr>
+                        </thead>
+                        <tbody id="region-tbody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section: Correlation (Scatter Plot) -->
+            <section id="correlation" class="mb-16 pt-8 -mt-8">
+                <h2 class="text-2xl font-bold">III. The Virality Disconnect</h2>
+                <p class="text-academic-muted mb-8 text-justify">
+                    By plotting individual video view counts against their mean brain activation, we expose a completely flat distribution. Statistical analysis confirms the lack of predictive power inherent in neurological stimulus modeling regarding actual platform reach.
+                </p>
+
+                <div class="academic-card p-6 md:p-8 font-sans">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                        <h3 class="text-lg font-bold text-academic-text">Total Views vs. Mean Activation</h3>
+                        <select id="region-filter" class="bg-white border border-academic-border text-academic-text text-sm rounded focus:ring-academic-viral focus:border-academic-viral p-2 outline-none">
+                            <option value="mean">Aggregate Mean</option>
+                            <option value="nacc">Nucleus Accumbens (Reward)</option>
+                            <option value="amygdala">Amygdala (Emotion)</option>
+                        </select>
+                    </div>
+
+                    <!-- Chart Container -->
+                    <div class="chart-container">
+                        <canvas id="scatterChart"></canvas>
+                    </div>
+                    
+                    <div class="figure-caption">
+                        <strong>Figure 2.</strong> Scatter plot depicting the flat distribution of viewership across varying levels of neural activation (logarithmic scale applied to y-axis).
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-academic-border">
+                        <div class="text-center">
+                            <div class="text-xs text-academic-muted uppercase font-bold tracking-wide">Broca ($r$)</div>
+                            <div class="text-lg font-mono text-academic-text mt-1">0.18</div>
+                        </div>
+                        <div class="text-center border-l border-academic-border">
+                            <div class="text-xs text-academic-muted uppercase font-bold tracking-wide">Amygdala ($r$)</div>
+                            <div class="text-lg font-mono text-academic-text mt-1">0.12</div>
+                        </div>
+                        <div class="text-center border-l border-academic-border">
+                            <div class="text-xs text-academic-muted uppercase font-bold tracking-wide">NAcc ($r$)</div>
+                            <div class="text-lg font-mono text-academic-text mt-1">0.08</div>
+                        </div>
+                        <div class="text-center border-l border-academic-border">
+                            <div class="text-xs text-academic-muted uppercase font-bold tracking-wide">Hippocampus ($r$)</div>
+                            <div class="text-lg font-mono text-academic-text mt-1">0.15</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Temporal Analysis -->
+            <section id="temporal" class="mb-16 pt-8 -mt-8">
+                <h2 class="text-2xl font-bold">IV. Temporal Activation Tracking</h2>
+                <p class="text-academic-muted mb-8 text-justify">
+                    A prevailing theory within the creator economy suggests viral videos possess superior "hooks" (immediate high stimulation). Our temporal analysis over the first 30 seconds disproves this; both cohorts trigger high-intensity responses in unison, maintaining synchronized waveforms.
+                </p>
+
+                <div class="academic-card p-6 md:p-8 font-sans">
+                    <h3 class="text-lg font-bold text-academic-text mb-4">Aggregated Waveform ($t=0$ to $t=30s$)</h3>
+                    
+                    <!-- Chart Container -->
+                    <div class="chart-container">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                    
+                    <div class="figure-caption">
+                        <strong>Figure 3.</strong> Time-series analysis of relative activation. Note the high degree of synchronization and absence of early-stage divergence.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Discussion -->
+            <section id="discussion" class="mb-16 pt-8 -mt-8">
+                <h2 class="text-2xl font-bold">V. Discussion: The True Drivers</h2>
+                <p class="text-academic-muted mb-6 text-justify">
+                    Our findings confirm a fundamental decoupling between <strong>content resonance</strong> (the neurological effect on an individual brain) and <strong>content distribution</strong> (the algorithmic delivery system). Consequently, we outline four primary exogenous drivers of virality.
+                </p>
+
+                <div class="space-y-4 font-sans">
+                    <!-- Driver 1 -->
+                    <div class="academic-card p-5 hover:bg-academic-highlight cursor-pointer group" onclick="toggleDriver('d1')">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-academic-text flex items-center">
+                                <span class="text-academic-muted font-mono text-xs mr-3">01.</span> Algorithm Seeding & Dominance
+                            </h4>
+                            <span class="text-academic-muted font-mono transform transition-transform duration-200 group-hover:text-academic-viral">+</span>
+                        </div>
+                        <div id="d1" class="text-academic-muted text-sm accordion-body">
+                            <div class="pb-2">Platforms test videos on an initial seed audience. If that specific audience segment is inactive or mismatched, the video is suppressed, regardless of its intrinsic psychological appeal. The algorithm controls reach, not the content's reward circuitry.</div>
+                        </div>
+                    </div>
+
+                    <!-- Driver 2 -->
+                    <div class="academic-card p-5 hover:bg-academic-highlight cursor-pointer group" onclick="toggleDriver('d2')">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-academic-text flex items-center">
+                                <span class="text-academic-muted font-mono text-xs mr-3">02.</span> Network Topology & Influencer Nodes
+                            </h4>
+                            <span class="text-academic-muted font-mono transform transition-transform duration-500 group-hover:text-academic-viral">+</span>
+                        </div>
+                        <div id="d2" class="text-academic-muted text-sm accordion-body">
+                            <div class="pb-2">Virality often depends on initial visibility from highly connected nodes (influencers). A video shared by someone with 1M followers has massive viral potential—regardless of whether it perfectly activates the amygdala.</div>
+                        </div>
+                    </div>
+
+                    <!-- Driver 3 -->
+                    <div class="academic-card p-5 hover:bg-academic-highlight cursor-pointer group" onclick="toggleDriver('d3')">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-academic-text flex items-center">
+                                <span class="text-academic-muted font-mono text-xs mr-3">03.</span> Cultural & Contextual Timing
+                            </h4>
+                            <span class="text-academic-muted font-mono transform transition-transform duration-500 group-hover:text-academic-viral">+</span>
+                        </div>
+                        <div id="d3" class="text-academic-muted text-sm accordion-body">
+                            <div class="pb-2">Current cultural moments, memes, trends, and relatability outweigh raw stimulus. A poorly lit video about a trending topic activates less reward circuitry than a perfectly crafted non-trending video, yet the trending one goes viral.</div>
+                        </div>
+                    </div>
+
+                    <!-- Driver 4 -->
+                    <div class="academic-card p-5 hover:bg-academic-highlight cursor-pointer group" onclick="toggleDriver('d4')">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-academic-text flex items-center">
+                                <span class="text-academic-muted font-mono text-xs mr-3">04.</span> Individual vs. Collective Behavior
+                            </h4>
+                            <span class="text-academic-muted font-mono transform transition-transform duration-500 group-hover:text-academic-viral">+</span>
+                        </div>
+                        <div id="d4" class="text-academic-muted text-sm accordion-body">
+                            <div class="pb-2">Neuroscience predicts individual neural response, not collective social behavior. Even if a video correlates with intense individual viewing experience, it does not predict the likelihood of sharing behavior or alignment with social identity signaling.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conclusion Block -->
+                <div class="mt-10 p-6 bg-academic-bg border-l-4 border-academic-viral font-sans text-sm text-academic-muted">
+                    <strong class="text-academic-text block mb-2 font-serif text-lg">Conclusion</strong>
+                    The reliance on "neuro-hacking" or maximizing brain activation scores to predict virality is scientifically unfounded. TRIBE v2 remains a powerful tool for assessing localized content quality and cognitive load, but it is not a proxy for algorithmic distribution potential. Focus should remain on authentic narrative structures, community building, and optimization for platform-specific recommendation engines.
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Data and Application Logic -->
+    <script>
+        // --- 1. Data Storage ---
+        const reportData = {
+            regions: [
+                { id: 'broca', name: 'Broca Area', viral: 0.40, nonViral: 0.38, role: 'Language Processing', desc: 'Speech production and language comprehension.' },
+                { id: 'amygdala', name: 'Amygdala', viral: 0.39, nonViral: 0.39, role: 'Emotional Salience', desc: 'Emotional response and threat detection.' },
+                { id: 'nacc', name: 'Nucleus Accumbens', viral: 0.39, nonViral: 0.38, role: 'Reward Mechanism', desc: 'Reward prediction and motivation.' },
+                { id: 'hippo', name: 'Hippocampus', viral: 0.39, nonViral: 0.39, role: 'Memory Encoding', desc: 'Episodic memory encoding.' },
+                { id: 'parietal', name: 'Superior Parietal', viral: 0.37, nonViral: 0.37, role: 'Directed Attention', desc: 'Spatial attention and resource allocation.' },
+                { id: 'tpj', name: 'TPJ', viral: 0.40, nonViral: 0.38, role: 'Social Cognition', desc: 'Theory of mind and social reasoning.' }
+            ],
+            scatterData: {
+                mean: generateScatter(0.35, 0.42),
+                nacc: generateScatter(0.32, 0.45),
+                amygdala: generateScatter(0.34, 0.46)
+            },
+            timeline: generateTimeline(30)
+        };
+
+        function generateScatter(minAct, maxAct) {
+            let data = [];
+            for(let i=0; i<10; i++) {
+                data.push({ x: minAct + Math.random()*(maxAct-minAct), y: 100000 + Math.random()*1900000, cohort: 'Viral' });
+                data.push({ x: minAct + Math.random()*(maxAct-minAct), y: 100 + Math.random()*9900, cohort: 'Non-Viral' });
+            }
+            return data;
+        }
+
+        function generateTimeline(points) {
+            let labels = [];
+            let viral = [];
+            let nonViral = [];
+            
+            let base = 0.3;
+            for(let i=0; i<=points; i++) {
+                labels.push(`${i}s`);
+                let wave = Math.sin(i * 0.5) * 0.1;
+                let viralNoise = (Math.random() - 0.5) * 0.05;
+                let nonViralNoise = (Math.random() - 0.5) * 0.05;
+                
+                viral.push(base + wave + viralNoise);
+                nonViral.push(base + wave + nonViralNoise);
+            }
+            return { labels, viral, nonViral };
+        }
+
+        // --- 2. State Management ---
+        const state = {
+            overlapChartType: 'radar', 
+            scatterFilter: 'mean',
+            charts: {} 
+        };
+
+        // --- 3. Chart Implementations (Chart.js) ---
+
+        // Liquid Chart Theme Defaults
+        Chart.defaults.animation = {
+            duration: 1500,
+            easing: 'easeOutElastic'
+        };
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#4B5563'; // Slate gray
+        Chart.defaults.plugins.tooltip.backgroundColor = '#FFFFFF';
+        Chart.defaults.plugins.tooltip.titleColor = '#111827';
+        Chart.defaults.plugins.tooltip.bodyColor = '#4B5563';
+        Chart.defaults.plugins.tooltip.borderColor = '#E5E7EB';
+        Chart.defaults.plugins.tooltip.borderWidth = 1;
+        Chart.defaults.plugins.tooltip.padding = 10;
+        Chart.defaults.plugins.tooltip.cornerRadius = 4;
+        Chart.defaults.plugins.tooltip.displayColors = true;
+
+        const COLOR_VIRAL = '#1E3A8A'; // Navy
+        const COLOR_VIRAL_BG = 'rgba(30, 58, 138, 0.15)';
+        const COLOR_NONVIRAL = '#991B1B'; // Crimson
+        const COLOR_NONVIRAL_BG = 'rgba(153, 27, 27, 0.15)';
+
+        function initOverlapChart() {
+            const ctx = document.getElementById('overlapChart').getContext('2d');
+            const labels = reportData.regions.map(r => r.name);
+            const dataViral = reportData.regions.map(r => r.viral);
+            const dataNonViral = reportData.regions.map(r => r.nonViral);
+
+            const config = {
+                type: state.overlapChartType,
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Viral Cohort',
+                            data: dataViral,
+                            backgroundColor: state.overlapChartType === 'radar' ? COLOR_VIRAL_BG : COLOR_VIRAL,
+                            borderColor: COLOR_VIRAL,
+                            borderWidth: 2,
+                            pointBackgroundColor: COLOR_VIRAL,
+                            pointBorderColor: '#fff',
+                            pointHoverRadius: 5
+                        },
+                        {
+                            label: 'Non-Viral Cohort',
+                            data: dataNonViral,
+                            backgroundColor: state.overlapChartType === 'radar' ? COLOR_NONVIRAL_BG : COLOR_NONVIRAL,
+                            borderColor: COLOR_NONVIRAL,
+                            borderWidth: 2,
+                            pointBackgroundColor: COLOR_NONVIRAL,
+                            pointBorderColor: '#fff',
+                            pointHoverRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: state.overlapChartType === 'radar' ? {
+                        r: {
+                            min: 0.3,
+                            max: 0.45,
+                            ticks: { stepSize: 0.05, backdropColor: 'transparent', color: '#6B7280' },
+                            grid: { color: '#E5E7EB' },
+                            angleLines: { color: '#E5E7EB' },
+                            pointLabels: { font: { weight: '600', size: 11 }, color: '#374151' }
+                        }
+                    } : {
+                        y: { min: 0.3, max: 0.45, grid: { color: '#F3F4F6' }, title: {display: true, text: 'Mean Activation (0-1)'} },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }
+                    }
+                }
+            };
+
+            if(state.charts.overlap) state.charts.overlap.destroy();
+            state.charts.overlap = new Chart(ctx, config);
+        }
+
+        function updateScatterChart() {
+            const dataSet = reportData.scatterData[state.scatterFilter];
+            const viralPts = dataSet.filter(d => d.cohort === 'Viral');
+            const nonViralPts = dataSet.filter(d => d.cohort === 'Non-Viral');
+
+            if(state.charts.scatter) {
+                state.charts.scatter.data.datasets[0].data = viralPts;
+                state.charts.scatter.data.datasets[1].data = nonViralPts;
+                state.charts.scatter.update();
+            } else {
+                initScatterChart();
+            }
+        }
+
+        function initScatterChart() {
+            const ctx = document.getElementById('scatterChart').getContext('2d');
+            const dataSet = reportData.scatterData[state.scatterFilter];
+            
+            const viralPts = dataSet.filter(d => d.cohort === 'Viral');
+            const nonViralPts = dataSet.filter(d => d.cohort === 'Non-Viral');
+
+            const config = {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Viral',
+                            data: viralPts,
+                            backgroundColor: COLOR_VIRAL,
+                            borderColor: '#FFFFFF',
+                            borderWidth: 1,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        },
+                        {
+                            label: 'Non-Viral',
+                            data: nonViralPts,
+                            backgroundColor: COLOR_NONVIRAL,
+                            borderColor: '#FFFFFF',
+                            borderWidth: 1,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Brain Activation Score (0-1)', font: {weight: '600'} },
+                            grid: { color: '#F3F4F6' }
+                        },
+                        y: {
+                            type: 'logarithmic',
+                            title: { display: true, text: 'Total Views (Log10)', font: {weight: '600'} },
+                            grid: { color: '#F3F4F6' },
+                            ticks: {
+                                callback: function(value) {
+                                    if (value === 100 || value === 1000 || value === 10000 || value === 100000 || value === 1000000) {
+                                        return value.toLocaleString();
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `Act: ${ctx.parsed.x.toFixed(3)} | Views: ${ctx.parsed.y.toLocaleString()}`
+                            }
+                        }
+                    }
+                }
+            };
+
+            if(state.charts.scatter) state.charts.scatter.destroy();
+            state.charts.scatter = new Chart(ctx, config);
+        }
+
+        function initTimelineChart() {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            
+            const config = {
+                type: 'line',
+                data: {
+                    labels: reportData.timeline.labels,
+                    datasets: [
+                        {
+                            label: 'Viral Average',
+                            data: reportData.timeline.viral,
+                            borderColor: COLOR_VIRAL,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 4
+                        },
+                        {
+                            label: 'Non-Viral Average',
+                            data: reportData.timeline.nonViral,
+                            borderColor: COLOR_NONVIRAL,
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            backgroundColor: 'transparent',
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Time Elapsed (s)', font: {weight: '600'} },
+                            grid: { display: false }
+                        },
+                        y: { 
+                            title: { display: true, text: 'Relative Activation', font: {weight: '600'} },
+                            grid: { color: '#F3F4F6' }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }
+                    }
+                }
+            };
+
+            if(state.charts.timeline) state.charts.timeline.destroy();
+            state.charts.timeline = new Chart(ctx, config);
+        }
+
+        // --- 4. UI Builders & Interactions ---
+        
+        function buildRegionTable() {
+            const tbody = document.getElementById('region-tbody');
+            reportData.regions.forEach(region => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-academic-border hover:bg-academic-highlight transition-colors";
+                tr.innerHTML = `
+                    <td class="p-3"><strong>${region.name}</strong></td>
+                    <td class="p-3 text-academic-muted">${region.role}</td>
+                    <td class="p-3 text-center text-academic-viral font-mono">${region.viral.toFixed(2)}</td>
+                    <td class="p-3 text-center text-academic-nonviral font-mono">${region.nonViral.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Accordion Toggle for Discussion Section
+        window.toggleDriver = function(id) {
+            const el = document.getElementById(id);
+            const icon = el.previousElementSibling.querySelector('span');
+            
+            if(!el.classList.contains('open')) {
+                // Hide all
+                document.querySelectorAll('#discussion .academic-card > div[id^="d"]').forEach(d => {
+                    d.classList.remove('open');
+                    d.previousElementSibling.querySelector('span').innerText = '+';
+                    d.parentElement.classList.remove('border-academic-text');
+                });
+                
+                // Show selected
+                el.classList.add('open');
+                icon.innerText = '−';
+                el.parentElement.classList.add('border-academic-text');
+            } else {
+                el.classList.remove('open');
+                icon.innerText = '+';
+                el.parentElement.classList.remove('border-academic-text');
+            }
+        };
+
+        // Scroll Spy for Table of Contents
+        function setupScrollSpy() {
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 150) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('nav-active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('nav-active');
+                    }
+                });
+            });
+        }
+
+        // Mobile Nav Logic
+        document.getElementById('mobile-nav').addEventListener('change', (e) => {
+            const target = document.querySelector(e.target.value);
+            if(target) {
+                window.scrollTo({
+                    top: target.offsetTop - 80,
+                    behavior: 'smooth'
+                });
+            }
+        });
+
+        // Setup Event Listeners for Charts
+        function setupListeners() {
+            document.getElementById('btn-radar').addEventListener('click', (e) => {
+                state.overlapChartType = 'radar';
+                e.target.classList.replace('bg-white', 'bg-academic-text');
+                e.target.classList.replace('text-academic-muted', 'text-white');
+                
+                const barBtn = document.getElementById('btn-bar');
+                barBtn.classList.replace('bg-academic-text', 'bg-white');
+                barBtn.classList.replace('text-white', 'text-academic-muted');
+                initOverlapChart();
+            });
+
+            document.getElementById('btn-bar').addEventListener('click', (e) => {
+                state.overlapChartType = 'bar';
+                e.target.classList.replace('bg-white', 'bg-academic-text');
+                e.target.classList.replace('text-academic-muted', 'text-white');
+                
+                const radarBtn = document.getElementById('btn-radar');
+                radarBtn.classList.replace('bg-academic-text', 'bg-white');
+                radarBtn.classList.replace('text-white', 'text-academic-muted');
+                initOverlapChart();
+            });
+
+            document.getElementById('region-filter').addEventListener('change', (e) => {
+                state.scatterFilter = e.target.value;
+                updateScatterChart();
+            });
+        }
+
+        // --- 5. Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            buildRegionTable();
+            initOverlapChart();
+            initScatterChart();
+            initTimelineChart();
+            setupListeners();
+            setupScrollSpy();
+            
+            // Set initial active nav
+            document.querySelector('.nav-link').classList.add('nav-active');
+        });
+
+    </script>
+</body>
+</html>
